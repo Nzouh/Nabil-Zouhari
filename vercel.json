@@ -2,8 +2,10 @@
   "framework": null,
   "installCommand": "",
   "buildCommand": "",
-  "outputDirectory": ".",
+  "outputDirectory": "frontend",
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/", "destination": "/article.html" }
+    { "source": "/articles", "destination": "/articles.html" },
+    { "source": "/articles/weather-on-a-sphere", "destination": "/articles/geomstats-lab/index.html" }
   ]
 }

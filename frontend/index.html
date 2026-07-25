@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nabil Zouhari — Data Scientist & Machine Learning Engineer</title>
+<meta name="description" content="Portfolio of Nabil Zouhari: data scientist and machine learning engineer. Projects, experience, and articles.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+  :root {
+    --bg: #1f1f1d;
+    --text: #e9e5dc;
+    --muted: #a09b90;
+    --faint: #78746a;
+    --rule: #37352f;
+    --accent: #8db4dc;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --serif: Georgia, 'Times New Roman', serif;
+    --mono: ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---- nav ---- */
+  nav {
+    max-width: 720px; margin: 0 auto; padding: 1.4rem 1.25rem;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 0.9rem;
+  }
+  nav .brand { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 1rem; }
+  nav .brand:hover { color: var(--text); text-decoration: none; }
+  nav .links a { color: var(--muted); margin-left: 1.4rem; }
+  nav .links a:hover { color: var(--text); text-decoration: none; }
+  nav .links a.current { color: var(--text); border-bottom: 1px solid var(--accent); padding-bottom: 2px; }
+
+  /* ---- hero ---- */
+  .hero {
+    display: flex; gap: 2.2rem; align-items: flex-start;
+    padding: 2.8rem 0 2.4rem; border-bottom: 1px solid var(--rule);
+  }
+  .hero-text { flex: 1; min-width: 0; }
+  h1 {
+    font-family: var(--serif); font-weight: 400;
+    font-size: 2.35rem; line-height: 1.15; margin: 0 0 0.5rem; letter-spacing: -0.01em;
+  }
+  .role {
+    color: var(--accent); font-size: 1.02rem; margin: 0 0 0.9rem;
+    font-weight: 500; letter-spacing: 0.01em;
+  }
+  .edu { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.1rem; line-height: 1.55; }
+  .about { color: var(--text); font-size: 0.98rem; margin: 0 0 1.3rem; max-width: 56ch; }
+  .contact { display: flex; gap: 1.15rem; align-items: center; }
+  .contact a { color: var(--muted); display: inline-flex; }
+  .contact a:hover { color: var(--accent); }
+  .contact svg { width: 21px; height: 21px; fill: currentColor; }
+  .portrait {
+    width: 168px; flex-shrink: 0;
+    border-radius: 10px; border: 1px solid var(--rule);
+    display: block; margin-top: 0.4rem;
+  }
+  @media (max-width: 560px) {
+    .hero { flex-direction: column-reverse; gap: 1.4rem; }
+    .portrait { width: 132px; }
+    h1 { font-size: 1.9rem; }
+  }
+
+  /* ---- sections ---- */
+  h2 {
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); margin: 3rem 0 1.2rem;
+  }
+
+  /* experience */
+  .xp { display: grid; grid-template-columns: 1fr auto; row-gap: 1rem; column-gap: 1rem; }
+  .xp .role-line { font-weight: 600; font-size: 0.98rem; }
+  .xp .org { color: var(--muted); font-weight: 400; }
+  .xp .dates { color: var(--faint); font-size: 0.88rem; white-space: nowrap; text-align: right; }
+
+  /* projects */
+  .proj { margin: 1.05rem 0; font-size: 0.97rem; color: #cfcabf; }
+  .proj a.name { font-weight: 600; color: var(--text); }
+  .proj a.name:hover { color: var(--accent); text-decoration: none; }
+  .award {
+    font-size: 0.75rem; color: #d9b46a; letter-spacing: 0.04em;
+    white-space: nowrap; margin-left: 0.45rem;
+  }
+
+  .proj b { font-weight: 600; color: var(--text); }
+
+  footer {
+    max-width: 720px; margin: 0 auto; padding: 0 1.25rem 3rem;
+    color: var(--faint); font-size: 0.85rem;
+    border-top: 1px solid var(--rule); padding-top: 1.6rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  footer a { color: var(--muted); display: inline-flex; }
+  footer a:hover { color: var(--accent); }
+  footer svg { width: 17px; height: 17px; fill: currentColor; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="/">Nabil Zouhari</a>
+  <span class="links">
+    <a href="/" class="current">Home</a>
+    <a href="/articles">Articles</a>
+  </span>
+</nav>
+
+<main>
+
+<section class="hero">
+  <div class="hero-text">
+    <h1>Nabil Zouhari</h1>
+    <p class="role">ML engineer @ uOttawa '28</p>
+    <p class="about">
+      Hey, I'm Nabil. Complex problems are my favorite kind, so I spend my time where the
+      grind is, from neural nets to GPU programming. The rest I offload into the
+      systems I build, for your mind is for having ideas, not holding them.
+    </p>
+    <p class="contact">
+      <a href="https://github.com/nzouh" aria-label="GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+      <a href="https://linkedin.com/in/nabilzouhari" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.55C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>
+      <a href="mailto:nzouhari15@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></a>
+    </p>
+  </div>
+  <img class="portrait" src="/headshot.jpg" alt="Portrait of Nabil Zouhari">
+</section>
+
+<h2>Experience</h2>
+<div class="xp">
+  <div class="role-line">Biomedical Software Engineer <span class="org">&mdash; Agriculture and Agri-Food Canada</span></div>
+  <div class="dates">Jan &ndash; Apr 2026</div>
+  <div class="role-line">DevOps Cybersecurity Analyst <span class="org">&mdash; Public Services and Procurement Canada</span></div>
+  <div class="dates">May &ndash; Dec 2025</div>
+  <div class="role-line">Software Engineering Intern (AI/ML) <span class="org">&mdash; Cleer</span></div>
+  <div class="dates">Jan &ndash; Apr 2025</div>
+</div>
+
+<h2>Projects</h2>
+
+<p class="proj"><a class="name" href="https://github.com/nzouh/GridCast">gridcast</a>
+  &mdash; bridging weather and the power grid with probabilistic 10-day forecasts.<span class="award">hackathon winner</span></p>
+
+<p class="proj"><a class="name" href="https://github.com/rbous/Champanzee">champanzee.tech</a>
+  &mdash; real-time multiplayer survey platform.<span class="award">hackathon winner</span></p>
+
+<p class="proj"><a class="name" href="https://github.com/nzouh/EdgeAI">nasa sentinel</a>
+  &mdash; predicting NASA engine failures with quantized, sub-50ms edge inference.</p>
+
+<p class="proj"><a class="name" href="https://github.com/nzouh/GithubGPT">githubgpt</a>
+  &mdash; ask any codebase questions in plain English.</p>
+
+<h2>Community</h2>
+<p class="proj"><a class="name" href="https://github.com/rapidsai/cuml">nvidia cuml</a>
+  &mdash; active contributor to GPU-accelerated machine learning.</p>
+<p class="proj"><b>minds on ai</b> @ uOttawa
+  &mdash; weekly deep-dives and paper reviews on foundation models and agents.</p>
+
+</main>
+
+<footer>
+  <span>&copy; 2026 Nabil Zouhari</span>
+  <a href="https://github.com/nzouh" aria-label="GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+  <a href="https://linkedin.com/in/nabilzouhari" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.55C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>
+  <a href="mailto:nzouhari15@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></a>
+</footer>
+
+</body>
+</html>

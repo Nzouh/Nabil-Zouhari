@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Articles — Nabil Zouhari</title>
+<meta name="description" content="Articles by Nabil Zouhari on machine learning, statistics, and geometry.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+  :root {
+    --bg: #1f1f1d;
+    --text: #e9e5dc;
+    --muted: #a09b90;
+    --faint: #78746a;
+    --rule: #37352f;
+    --accent: #8db4dc;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --serif: Georgia, 'Times New Roman', serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 0 1.25rem 5rem; min-height: 60vh; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  nav {
+    max-width: 720px; margin: 0 auto; padding: 1.4rem 1.25rem;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 0.9rem;
+  }
+  nav .brand { font-family: var(--serif); font-style: italic; color: var(--muted); font-size: 1rem; }
+  nav .brand:hover { color: var(--text); text-decoration: none; }
+  nav .links a { color: var(--muted); margin-left: 1.4rem; }
+  nav .links a:hover { color: var(--text); text-decoration: none; }
+  nav .links a.current { color: var(--text); border-bottom: 1px solid var(--accent); padding-bottom: 2px; }
+
+  header.page { padding: 2.6rem 0 1.8rem; border-bottom: 1px solid var(--rule); margin-bottom: 2rem; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 2.1rem; margin: 0 0 0.4rem; }
+  .tagline { color: var(--muted); font-size: 0.95rem; margin: 0; }
+
+  .card {
+    display: block; margin-bottom: 2.4rem; color: inherit;
+  }
+  .card:hover { text-decoration: none; }
+  .card h3 {
+    font-family: var(--serif); font-weight: 400; font-size: 1.35rem;
+    line-height: 1.3; margin: 0 0 0.45rem; color: var(--text);
+    transition: color 0.15s ease;
+  }
+  .card:hover h3 { color: var(--accent); }
+  .card p { margin: 0 0 0.7rem; color: var(--muted); font-size: 0.94rem; }
+  .card .meta { color: var(--faint); font-size: 0.84rem; }
+  .card .read { color: var(--accent); font-size: 0.88rem; margin-left: 0.9rem; }
+
+  footer {
+    max-width: 720px; margin: 0 auto; padding: 1.6rem 1.25rem 3rem;
+    color: var(--faint); font-size: 0.85rem; border-top: 1px solid var(--rule);
+    display: flex; align-items: center; gap: 1rem;
+  }
+  footer a { color: var(--muted); display: inline-flex; }
+  footer a:hover { color: var(--accent); }
+  footer svg { width: 17px; height: 17px; fill: currentColor; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="/">Nabil Zouhari</a>
+  <span class="links">
+    <a href="/">Home</a>
+    <a href="/articles" class="current">Articles</a>
+  </span>
+</nav>
+
+<main>
+
+<header class="page">
+  <h1>Articles</h1>
+  <p class="tagline">Writing on machine learning, statistics, and the geometry underneath both.</p>
+</header>
+
+<a class="card" href="/articles/weather-on-a-sphere">
+  <h3>Weather Data Lives on a Sphere. Our Statistics Should Too.</h3>
+  <p>Using geometry and group symmetry to track heat patterns on Earth &mdash; Fr&eacute;chet means,
+  geodesic PCA, and rotation equivariance applied to real ERA5 temperature data, with the
+  Euclidean failure modes measured rather than assumed.</p>
+  <span class="meta">July 2026</span><span class="read">Read &rarr;</span>
+</a>
+
+<!-- To add a new article: copy the card above, update href, title, description, and date. -->
+
+</main>
+
+<footer>
+  <span>&copy; 2026 Nabil Zouhari</span>
+  <a href="https://github.com/nzouh" aria-label="GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
+  <a href="https://linkedin.com/in/nabilzouhari" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.55C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.72C24 .77 23.2 0 22.22 0z"/></svg></a>
+  <a href="mailto:nzouhari15@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></a>
+</footer>
+
+</body>
+</html>
