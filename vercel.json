@@ -5,7 +5,21 @@
   "outputDirectory": "frontend",
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/articles", "destination": "/articles.html" },
-    { "source": "/articles/weather-on-a-sphere", "destination": "/articles/geomstats-lab/index.html" }
+    {
+      "source": "/articles",
+      "destination": "/articles.html"
+    },
+    {
+      "source": "/articles/weather-on-a-sphere",
+      "destination": "/articles/geomstats-lab/index.html"
+    },
+    {
+      "source": "/arc",
+      "destination": "https://arc-agent-zouhari.fly.dev/arc"
+    },
+    {
+      "source": "/arc/:path*",
+      "destination": "https://arc-agent-zouhari.fly.dev/arc/:path*"
+    }
   ]
 }
