@@ -14,6 +14,10 @@
       "destination": "/articles/geomstats-lab/index.html"
     },
     {
+      "source": "/articles/snapdragon-layout",
+      "destination": "/articles/snapdragon-layout/index.html"
+    },
+    {
       "source": "/arc",
       "destination": "https://arc-agent-zouhari.fly.dev/arc"
     },
