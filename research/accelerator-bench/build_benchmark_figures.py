@@ -1,4 +1,4 @@
-"""Build the article's three benchmark figures from saved, validated results.
+"""Build the article's four benchmark figures from saved, validated results.
 
 Usage: python build_benchmark_figures.py /path/to/accelerator-bench
 Requires the accelerator-bench notebook environment. Submits no device jobs.
@@ -24,6 +24,7 @@ output = site / 'frontend/articles/snapdragon-layout/figures'
 output.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(repo / 'src'))
 from accelerator_bench.comparison import aggregate_sweep, gpu_matches
+from accelerator_bench.layout_research import BASE, NHWC, convolution_evidence
 
 gpu_path = repo / 'results/rtx3060-ac-2026-10-13.json'
 gpu = json.loads(gpu_path.read_text())
@@ -35,6 +36,8 @@ local = gpu_matches(gpu, remote['rows'])
 npu = [r for r in remote['rows'] if r['variant'] == 'optimized']
 assert len(npu) == 12 and all(r['complete'] and r['n'] == 3 for r in npu)
 assert not remote['failures']
+layout = convolution_evidence(repo)
+assert len(layout) == 8 and all(r['complete'] and r['n'] == 3 for r in layout)
 
 TEAL, ORANGE, GRAY, PURPLE = '#087e8b', '#bd4b22', '#667085', '#7965a3'
 OPS = [('matmul', 'Matrix multiplication', 'Input rows'), ('conv_relu', 'Convolution + ReLU', 'Image width = height'), ('rmsnorm', 'RMSNorm', 'Input rows')]
@@ -112,14 +115,14 @@ for narrow in (False, True):
         ax.tick_params(axis='x',labelsize=8)
         ax.set_yticks(range(4),[str(size(r)) for r in eager])
         ax.set_ylim(3.6,-.6)
-        ax.set(title=title,xlabel='Before / after time (×)')
+        ax.set(title=title,xlabel='Execution-time\nspeedup (×)')
         ax.set_ylabel('Image width = height' if op=='conv_relu' else 'Input rows')
         ax.grid(axis='x',alpha=.12)
     finish(fig, axes, 'compiler_speedup', narrow)
 
     fig, axes = panels(narrow)
     for ax, (op,title,xlabel) in zip(axes,OPS):
-        for variant,label,color,marker in [('eager','Eager',GRAY,'s'),('compiled','Compiled',TEAL,'o'),('fused','Hand-fused',ORANGE,'^')]:
+        for variant,label,color,marker in [('eager','Uncompiled',GRAY,'s'),('compiled','Compiled',TEAL,'o'),('fused','Custom kernel',ORANGE,'^')]:
             selected=group(op,variant=variant)
             if not selected: continue
             assert all(r['energy']['status']=='measured' for r in selected)
@@ -132,6 +135,32 @@ for narrow in (False, True):
         if narrow or ax is axes[0]: ax.set_ylabel('Energy per operation (mJ)')
     finish(fig, axes, 'gpu_energy', narrow)
 
+    fig, axes = plt.subplots(2, 1, figsize=(3.8, 6.8)) if narrow else plt.subplots(1, 2, figsize=(7, 3.6))
+    for j, (name, label, color) in enumerate((('NCHW', 'Channels first', TEAL), ('NHWC', 'Channels last', ORANGE))):
+        selected = sorted((r for r in layout if r['layout'] == name), key=lambda r: r['size'])
+        x = np.arange(4) + (j - .5) * .25
+        med = np.array([r['median_us'] for r in selected])
+        error = [med - [r['min_us'] for r in selected], np.array([r['max_us'] for r in selected]) - med]
+        axes[0].errorbar(x, med, yerr=error, color=color, marker='_', markersize=12,
+                        capsize=3, linestyle='none', label=label)
+        for pos, row in zip(x, selected):
+            axes[0].scatter(pos + np.linspace(-.035, .035, row['n']),
+                            [job['median_us'] for job in row['jobs']], color=color, s=19, zorder=3)
+        counts = [r['transpose_instances'] for r in selected]
+        axes[1].bar(x, counts, width=.22, color=color)
+        for pos, count in zip(x, counts):
+            if count == 0:
+                axes[1].annotate('0', (pos, 0), xytext=(0, 4), textcoords='offset points',
+                                 ha='center', color=color, fontsize=9)
+    for ax in axes:
+        ax.set_xticks(range(4), ['16', '32', '64', '128'])
+        ax.set_xlabel('Image width = height')
+        ax.set_ylim(bottom=0)
+        ax.grid(axis='y', alpha=.16)
+    axes[0].set(title='NPU time', ylabel='Time per operation (µs)')
+    axes[1].set(title='Data reordering', ylabel='Transpose count', yticks=[0, 4, 18])
+    finish(fig, axes, 'convolution_layout', narrow)
+
 profile_path=repo/'results/rtx3060-ac-rmsnorm-profile.json'
 profile=json.loads(profile_path.read_text())
 assert profile['variants']['eager']['cuda_activities_per_call']==9
@@ -139,12 +168,14 @@ assert profile['variants']['compiled']['cuda_activities_per_call']==1
 spotlight={variant:next(r for r in group('rmsnorm',variant=variant) if size(r)==32) for variant in ('eager','compiled','fused')}
 summary={v:{'graph_us':r['graph_cuda_ms']['median']*1000,'python_us':r['wall_ms']['median']*1000,
     'power_w':r['energy']['mean_gpu_power_w'],'energy_mj':r['energy']['gpu_energy_mj_per_execution']} for v,r in spotlight.items()}
+source_paths = [gpu_path, profile_path, repo / BASE / 'results.json', repo / BASE / 'htp-review.json',
+                repo / NHWC / 'results.json', repo / NHWC / 'htp-review.json']
 provenance={'source_repository':'https://github.com/Nzouh/accelerator-bench',
     'source_commit':subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip(),
-    'source_sha256':{str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (gpu_path,profile_path,repo/'results/hub-s24-sweep-2026-10-13/results.json')},
-    'figure_basis':'All 12 shapes; compiled/eager medians; FP16 energy sweep. No new runs or NPU energy estimates.',
+    'source_sha256':{str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_paths},
+    'figure_basis':'All 12 shapes; compiled/eager medians; FP16 energy sweep; 8 NPU convolution layout cases. No new runs or NPU energy estimates.',
     'rmsnorm_fp16_32x1024':summary,
     'presentation_references':['https://pytorch.org/blog/accelerated-pytorch-inference/','https://www.collabora.com/news-and-blog/blog/2024/12/19/faster-inference-torch.compile-vs-tensorrt/']}
 (Path(__file__).parent/'provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
-print('Built 3 figures in desktop/mobile variants; 56 GPU configurations and 12 matched NPU cases checked.')
+print('Built 4 figures in desktop/mobile variants; 56 GPU configurations, 12 matched NPU cases and 8 NPU layout cases checked.')
 print(json.dumps(summary,indent=2))

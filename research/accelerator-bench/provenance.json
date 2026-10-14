@@ -4,9 +4,12 @@
   "source_sha256": {
     "results/rtx3060-ac-2026-10-13.json": "4d09cec4206a9df9c64eae54a533c5180bc7b3b4d7e8f4a0a9124927208a0316",
     "results/rtx3060-ac-rmsnorm-profile.json": "dac2e710ffdf710b944c98a1035146ccd9bb83accb4626f9419330166d9a280c",
-    "results/hub-s24-sweep-2026-10-13/results.json": "79bf82a2ba2f8891af9171e76f6eacc2a14d75b321e7486a566bc52e94846a1d"
+    "results/hub-s24-sweep-2026-10-13/results.json": "79bf82a2ba2f8891af9171e76f6eacc2a14d75b321e7486a566bc52e94846a1d",
+    "results/hub-s24-sweep-2026-10-13/htp-review.json": "0bc2c13ed50f59644d5e9a1a5a2aa2e520aacdc490cbc2e87db3f65e8b639a24",
+    "results/hub-s24-nhwc-2026-10-13/results.json": "e23c0de4f03be84f0f4d65ca890db1b77af30b6ed289df3cd9b41ed070212754",
+    "results/hub-s24-nhwc-2026-10-13/htp-review.json": "f25eeb55da7548eeff818ca787059433bd9cf5889dc0c010398da4992d71175f"
   },
-  "figure_basis": "All 12 shapes; compiled/eager medians; FP16 energy sweep. No new runs or NPU energy estimates.",
+  "figure_basis": "All 12 shapes; compiled/eager medians; FP16 energy sweep; 8 NPU convolution layout cases. No new runs or NPU energy estimates.",
   "rmsnorm_fp16_32x1024": {
     "eager": {
       "graph_us": 13.178879737854002,
