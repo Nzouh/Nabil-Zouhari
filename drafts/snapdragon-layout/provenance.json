@@ -7,21 +7,21 @@
   "image_source": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
   "assets_sha256": {
     "convolution_layout-mobile.png": "0a0e17dd1070e4d78353ddb2816dd5abf68dbee5d5b8d9447b107f8c97349640",
-    "convolution_layout-mobile.svg": "90c0fc485c77b196c2dd1c336a755e89bda10d4fe6e7522726c0515f9b4119c9",
+    "convolution_layout-mobile.svg": "5569ee0a037471502410e10ed00b57cc1f67945eaffa1fef65b0141f49a7859b",
     "convolution_layout.png": "5653ed65a9dcb522e2af6fef82ddf1df47a971ecd38daadab1a97a79b4b67b02",
-    "convolution_layout.svg": "31bc72b14ab8da12f2961df9c42edf648349ccee12db0bb4cb1a0e007214eebc",
+    "convolution_layout.svg": "f7bfc1928fc2f2d6cbf522c81eacf2cfb157fb4c2175fb0ed9914165d26bb91a",
     "input-crop.png": "4f12f6620520e784edecde6b348eda6f78e42f6836c3c00fe6b30799c408c8b5",
     "preparation-mobile.png": "79891e69fc4e4135694efbc27f4e8cef3df310ee611027623d33966dea5d3f28",
-    "preparation-mobile.svg": "97be9dc68f41caa0d5b5d50f3a7e517d3b56e2f0fd326ec0672926124a238aa6",
+    "preparation-mobile.svg": "24fc9e2b67dd6dc9a46e79bdbc8ec556a934124b3bc0055dba5b2046607a3c6d",
     "preparation.png": "a0ec28342952ef985eacd55561459461df100c131332cf519aaed75133d0b403",
-    "preparation.svg": "56384b732f3880d8c4b3dee1a6de904d9d3b425d6aff478b2b1b51c57d8660a1",
+    "preparation.svg": "b09ac990d4695d03e6bf9ff31e31add32ddb3cbc50e60d8fefed3aba87c88baf",
     "storage_order-mobile.png": "acc3a69972ad92c0286b72128d371b938d66243e7adac6f9f592c69e35169829",
-    "storage_order-mobile.svg": "d2e4d1c2008a2b5bbbfd78083ac9930bc52f355befd42fb8c2cb36970e928654",
+    "storage_order-mobile.svg": "3e199dcc1fab78bbc7c0f7da3a02d11b7727047903780fbfcb2c49358110a1ab",
     "storage_order.png": "76c673cc023c7afba7636ae5b2591b4d31ba82eabb1cd14c9caf490df4e81b9a",
-    "storage_order.svg": "c515936ecec8ab2defb73e3aecd6e24ca78fc89e72da7388c95180b7da5ea140",
+    "storage_order.svg": "410874fdc2be3fd3eac6ed457e6ae533cd4c9b4d3be7d8725c876f2cd51aef77",
     "vision_validation-mobile.png": "1f91b42254a51a16321a675157a0f8918dc17a928e1033b9293c9355b063ec77",
-    "vision_validation-mobile.svg": "dda3f25b34bcde6c20a8c604918095c4491fa5679be861cde3bdc1b5bce8feb8",
+    "vision_validation-mobile.svg": "8febbb8f148246f5c2ff8027bbb32d3636b153cadfd318c1daf9d98624e84daa",
     "vision_validation.png": "3d94e8a5f5f662fa855a440bd051dd7c78d479ea2ed179aea0a3baeeed043ff7",
-    "vision_validation.svg": "5dfa7632b5a13017bf032263d0ade09e12e8bbf5dfb5bb632ea957dbf058d023"
+    "vision_validation.svg": "e62bac850ddbb82a309e9f7ff1acf377a6cb16fdf51b9b06c3ca6b12d1104bda"
   }
 }

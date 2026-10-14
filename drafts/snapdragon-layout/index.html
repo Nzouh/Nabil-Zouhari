@@ -148,7 +148,7 @@
   the limits of what the measurements support.
 </div>
 
-<h2><span class="no">1</span>From comparing chips to comparing layouts</h2>
+<h2 id="question"><span class="no">1</span>From comparing chips to comparing layouts</h2>
 
 <p>I started by comparing my RTX 3060 laptop GPU with a Snapdragon NPU through
 Qualcomm AI Hub. I wanted to see where the NPU was useful, beyond a headline benchmark.</p>
@@ -162,10 +162,10 @@ different work. I also had no NPU energy measurements.</p>
 when the same convolution receives its data in a different order?</em> That gives a
 compiler question with something concrete to inspect: the generated operations.</p>
 
-<h2><span class="no">2</span>What a layout changes</h2>
+<h2 id="storage"><span class="no">2</span>What a layout changes</h2>
 
 <p>N, C, H and W stand for batch, channels, height and width. For one image with two
-channels, NCHW stores each channel together. NHWC puts the channels of each pixel next
+channels, contiguous NCHW stores each channel together. Contiguous NHWC puts the channels of each pixel next
 to one another. The values and their pixel positions stay the same.</p>
 
 <figure>
@@ -185,11 +185,11 @@ view sharing the original storage; packing that view with <code>contiguous()</co
 copies values. A compiler may fuse or eliminate that conversion. Counting permutations
 in the source therefore does not tell us how many copies execute.</p>
 
-<p>One PyTorch detail: <code>channels_last</code> keeps the logical NCHW shape and changes
+<p>One <a href="https://docs.pytorch.org/tutorials/intermediate/memory_format_tutorial.html">PyTorch detail</a>: <code>channels_last</code> keeps the logical NCHW shape and changes
 strides. An NHWC interface changes the axis order as well. They are related, but they
 are not interchangeable API choices.</p>
 
-<h2><span class="no">3</span>The convolution on the NPU</h2>
+<h2 id="convolution"><span class="no">3</span>The convolution on the NPU</h2>
 
 <p>The device experiment holds the logical input and weights fixed and changes the
 external layout. Each run checks numerical agreement and NPU placement.</p>
@@ -231,7 +231,7 @@ assumes the surrounding pipeline can supply and consume the chosen layout. These
 were separate cloud sweeps, with uncontrolled device assignment and clocks. They
 support a result for this configuration, not a phone-wide speedup.</p>
 
-<h2><span class="no">4</span>Checking where a compiler option takes effect</h2>
+<h2 id="preparation"><span class="no">4</span>Checking where a compiler option takes effect</h2>
 
 <p>The first sweep exposed a problem in the experiment itself. It supplied HTP options
 during DLC conversion, without verifying that they took effect during preparation on
@@ -257,11 +257,12 @@ range overlapping O3 and does not establish a folding benefit.</p>
 <a href="https://zouhari.dev/articles/weather-on-a-sphere">weather study</a>:
 before interpreting a setting, verify what the implementation actually did.</p>
 
-<h2><span class="no">5</span>Does it survive a complete model?</h2>
+<h2 id="model"><span class="no">5</span>Does it survive a complete model?</h2>
 
 <p>A single convolution leaves the more interesting question open. I followed it with
-pretrained MobileNetV2, using torchvision's IMAGENET1K_V2 weights and one 224&times;224
-image. The experiment plan and acceptance rule were committed before the model jobs.</p>
+pretrained MobileNetV2, using torchvision's <a href="https://docs.pytorch.org/vision/0.26/models/generated/torchvision.models.mobilenet_v2.html">IMAGENET1K_V2 weights</a> and one 224&times;224
+image. These jobs request FP16 and explicitly set O3 at device preparation. The
+experiment plan and acceptance rule were committed before the model jobs.</p>
 
 <figure class="input-image">
   <img src="figures/input-crop.png" width="224" height="224" alt="The cropped NASA photograph of astronaut Eileen Collins used as the model input.">
@@ -298,7 +299,7 @@ defect. CPU FP16 is also not an emulator of NPU arithmetic.</p>
 these timings out of the performance claim. <b>The whole-model speedup question
 remains open under this numerical requirement.</b></p>
 
-<h2><span class="no">6</span>What I would test next</h2>
+<h2 id="next"><span class="no">6</span>What I would test next</h2>
 
 <p>The clearest result is the connection between interface layout, generated format
 operations and measured convolution latency. The 32&times;32 case is worth following:
@@ -313,7 +314,7 @@ layout variants on one controlled device and include preprocessing and transfers
 Those experiments could establish whether the local convolution result matters to
 an application.</p>
 
-<h2><span class="no">7</span>Reproduce and inspect</h2>
+<h2 id="reproduce"><span class="no">7</span>Reproduce and inspect</h2>
 
 <p>The <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/companion.ipynb">companion notebook</a>
 runs the small correctness example and rebuilds the figures from saved measurements.

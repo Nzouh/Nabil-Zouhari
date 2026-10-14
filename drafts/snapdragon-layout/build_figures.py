@@ -42,7 +42,9 @@ vision = {c['case_id']: c for c in vision_validation(repo)['cases']}
 
 def save(fig, name, narrow):
     suffix = '-mobile' if narrow else ''
-    fig.savefig(destination / f'{name}{suffix}.svg', metadata={'Date': None})
+    vector = destination / f'{name}{suffix}.svg'
+    fig.savefig(vector, metadata={'Date': None})
+    vector.write_text('\n'.join(line.rstrip() for line in vector.read_text(encoding='utf-8').splitlines()) + '\n', encoding='utf-8')
     fig.savefig(destination / f'{name}{suffix}.png', dpi=160)
     plt.close(fig)
 
