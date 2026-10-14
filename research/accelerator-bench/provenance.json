@@ -1,0 +1,34 @@
+{
+  "source_repository": "https://github.com/Nzouh/accelerator-bench",
+  "source_commit": "d009a12d0483f83d6b1a46c51d5c1bc80335b5c6",
+  "source_sha256": {
+    "results/rtx3060-ac-2026-10-13.json": "4d09cec4206a9df9c64eae54a533c5180bc7b3b4d7e8f4a0a9124927208a0316",
+    "results/rtx3060-ac-rmsnorm-profile.json": "dac2e710ffdf710b944c98a1035146ccd9bb83accb4626f9419330166d9a280c",
+    "results/hub-s24-sweep-2026-10-13/results.json": "79bf82a2ba2f8891af9171e76f6eacc2a14d75b321e7486a566bc52e94846a1d"
+  },
+  "figure_basis": "All 12 shapes; compiled/eager medians; FP16 energy sweep. No new runs or NPU energy estimates.",
+  "rmsnorm_fp16_32x1024": {
+    "eager": {
+      "graph_us": 13.178879737854002,
+      "python_us": 153.24723000048834,
+      "power_w": 59.48674319323386,
+      "energy_mj": 0.7564110441118822
+    },
+    "compiled": {
+      "graph_us": 1.310719966888428,
+      "python_us": 78.94826999972793,
+      "power_w": 64.05382121399012,
+      "energy_mj": 0.08332969230941661
+    },
+    "fused": {
+      "graph_us": 1.2584960460662842,
+      "python_us": 31.851910000000316,
+      "power_w": 61.11659377883382,
+      "energy_mj": 0.07614264965169935
+    }
+  },
+  "presentation_references": [
+    "https://pytorch.org/blog/accelerated-pytorch-inference/",
+    "https://www.collabora.com/news-and-blog/blog/2024/12/19/faster-inference-torch.compile-vs-tensorrt/"
+  ]
+}
