@@ -213,85 +213,97 @@ replay. The winner depends on the execution mode; these paths include different 
 
 <h2 id="compiler"><span class="no">2</span>Where compilation helps</h2>
 
-<p>This graph asks whether compilation reduces <b>execution time for the same operation
-on the same GPU</b>. Both versions use recorded replay. The ratio is <b>time before
-compilation &divide; time after compilation</b>: 1&times; means no change, 2&times;
-means half the time, and below 1&times; means compilation made it slower.</p>
+<p>This compares <b>time per operation on the RTX 3060</b>, using ordinary PyTorch
+(uncompiled) or <code>torch.compile</code> with Inductor. Both use recorded replay at
+the same precision. Speedup is <b>uncompiled time &divide; compiled time</b>:
+2&times; means half the time; below 1&times; means the uncompiled version wins.</p>
 
 <figure>
   <a href="figures/compiler_speedup.svg" aria-label="Open compiler speedup figure"><picture><source media="(max-width: 520px)" srcset="figures/compiler_speedup-mobile.svg" width="608" height="1408"><img src="figures/compiler_speedup.svg" width="1200" height="624" alt="Compiled versus eager GPU speedup for all twelve shapes in FP16 and FP32. Matmul stays near one. FP16 convolution improves about 1.3 times; FP32 convolution slows down. RMSNorm improves about 10 times in FP16 and 3.5 to 6.3 times in FP32."></picture></a>
-  <figcaption><b>Figure 2.</b> Execution-time speedup from <code>torch.compile</code>. Higher is better. The dashed line marks no change; each tick doubles the ratio. FP16 and FP32 mean 16-bit and 32-bit floating-point calculations. This does not measure time spent compiling.</figcaption>
+  <figcaption><b>Figure 2.</b> Ratios of median execution times; higher is better. Dashed 1&times; means no change; each tick doubles the ratio. FP16/FP32 use 16-/32-bit floating-point calculations. Compilation time is excluded.</figcaption>
 </figure>
 
-<p>RMSNorm, which rescales rows by their root-mean-square magnitude, benefits most.
-At 32&times;1024 in FP16, latency falls from <b>13.18 to 1.31&nbsp;&micro;s</b>.
-A separate profiler run shows <b>nine kernels becoming one Triton reduction kernel</b>.
-With Python calls included, time drops from 153.25 to 78.95&nbsp;&micro;s, a smaller
-1.94&times; speedup.</p>
+<p><b>Compilation wins most clearly for RMSNorm</b>, which rescales each row.
+At 32&times;1024 in FP16, time falls from <b>13.18 to 1.31&nbsp;&micro;s</b> (10.05&times;).
+The profiler shows nine GPU kernels, or pieces of GPU work, combined into one.
+This is where combining small steps pays off. Including Python calls reduces
+the speedup to 1.94&times; (153.25 to 78.95&nbsp;&micro;s).</p>
 
-<p><b>RMSNorm is the clear compilation win.</b> Matrix multiplication stays near
-1&times;, so compilation offers no clear time saving for these cases.
-FP16 convolution takes about 21&ndash;25% less time; FP32 convolution takes more time.
-Compiling everything does not guarantee faster execution.</p>
+<p><b>For convolution, compiled wins in FP16; uncompiled wins in FP32.</b>
+FP16 takes 21&ndash;25% less time after compilation. FP32 at 16&times;16 takes
+<b>16.51&nbsp;&micro;s compiled versus 10.27&nbsp;&micro;s uncompiled</b>.
+Matrix multiplication stays near 1&times;, with no clear benefit.</p>
+
+<p><b>Why did FP32 slow down?</b> Changing memory layout can add
+<a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-convolutional/index.html#tensor-layout">data-reordering work</a>.
+In my <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/gpu-layout/report.md">16&times;16 follow-up</a>,
+disabling layout optimization reduced time from <b>16.50 to 10.22&nbsp;&micro;s</b>
+and removed those conversions. Kernel choice changed too, so I cannot attribute the
+entire gain to reordering. TF32 was off in both versions. The useful next check is the work
+the compiler added.</p>
 
 <h2 id="energy"><span class="no">3</span>GPU power and energy</h2>
 
-<p>This measures <b>energy needed to complete one operation</b>, in millijoules (mJ):
-lower uses less energy for the same work. I ran each GPU implementation for at least
-five seconds, measured device energy from NVML power readings, and divided by the
-completed operation count. Energy was measured separately from execution time.</p>
+<p>This compares <b>GPU energy per completed operation</b>, in millijoules (mJ);
+lower is better. Each FP16 implementation ran for at least five seconds. I estimated
+energy from GPU power readings (NVML) over that interval, then divided by completed
+operations. This was separate from the timing measurements.</p>
 
 <figure>
-  <a href="figures/gpu_energy.svg" aria-label="Open GPU energy figure"><picture><source media="(max-width: 520px)" srcset="figures/gpu_energy-mobile.svg" width="608" height="1408"><img src="figures/gpu_energy.svg" width="1200" height="576" alt="FP16 GPU energy per operation across all twelve shapes. Compiled RMSNorm uses much less energy than eager, convolution improves, and matmul has no consistent improvement. A hand-fused implementation is also shown for RMSNorm."></picture></a>
-  <figcaption><b>Figure 3.</b> GPU energy per operation, using FP16. Eager is before compilation; compiled is after. Hand-fused is a separate kernel combining the RMSNorm steps. Vertical ticks increase tenfold. Each point is one measurement window; uncertainty across runs is unmeasured.</figcaption>
+  <a href="figures/gpu_energy.svg" aria-label="Open GPU energy figure"><picture><source media="(max-width: 520px)" srcset="figures/gpu_energy-mobile.svg" width="608" height="1408"><img src="figures/gpu_energy.svg" width="1200" height="576" alt="GPU energy per operation in millijoules. Compiled FP16 RMSNorm and convolution use less energy than uncompiled at every tested size. Matrix multiplication has no consistent winner. A custom RMSNorm kernel is also shown."></picture></a>
+  <figcaption><b>Figure 3.</b> Same GPU, inputs and FP16 precision. The custom kernel combines RMSNorm's steps by hand. Vertical ticks increase tenfold. Each point is one measurement window; uncertainty across runs is unmeasured.</figcaption>
 </figure>
 
-<p><b>Compiled RMSNorm and convolution use less GPU energy at every tested size.</b>
-Matrix multiplication has no consistent improvement. For 32&times;1024 RMSNorm,
-the separately written kernel uses the least energy in this run:</p>
+<p><b>Compiled beats uncompiled on energy for RMSNorm and convolution at every tested
+size.</b> Matrix multiplication has no consistent winner. At 32&times;1024 RMSNorm,
+the custom kernel uses the least energy in this run:</p>
 
 <div class="table-wrap">
 <table aria-label="FP16 RMSNorm 32 by 1024 power and energy">
   <thead><tr><th scope="col">Implementation</th><th scope="col">Average GPU power (W)</th><th scope="col">Energy (mJ/op)</th></tr></thead>
   <tbody>
-    <tr><th scope="row">Eager</th><td>59.49</td><td>0.7564</td></tr>
+    <tr><th scope="row">Uncompiled</th><td>59.49</td><td>0.7564</td></tr>
     <tr><th scope="row">Compiled</th><td>64.05</td><td>0.0833</td></tr>
-    <tr><th scope="row">Hand-fused</th><td>61.12</td><td>0.0761</td></tr>
+    <tr><th scope="row">Custom kernel</th><td>61.12</td><td>0.0761</td></tr>
   </tbody>
 </table>
 </div>
 
-<p>The compiled version draws more watts but finishes operations faster, using
-<b>89% less energy per operation</b> in this window. These are GPU-device readings,
-including baseline and background activity, with no idle subtraction. One session
-with unlocked clocks needs independent repeats before treating that percentage as stable.</p>
+<p><b>Higher power can still mean less energy per job.</b> Compiled RMSNorm draws
+64.05&nbsp;W versus 59.49&nbsp;W, yet uses <b>89% less energy per operation</b>.
+Finishing sooner more than offsets the higher power. That is why energy per completed
+operation matters when choosing an implementation.</p>
+
+<p class="method-note">GPU readings include baseline and background activity; no idle
+subtraction. One session with unlocked clocks needs independent repeats before treating
+the percentages as stable.</p>
 
 <p><b>NPU energy was unavailable.</b> There is no GPU/NPU efficiency ranking here;
 latency alone cannot supply one.</p>
 
-<h2 id="follow-ups"><span class="no">4</span>Following the traces</h2>
+<h2 id="follow-ups"><span class="no">4</span>NPU convolution: does layout help?</h2>
 
-<p>The regressions led to layout experiments on both devices. On the GPU, disabling
-layout optimization made FP32 convolution 1.54&ndash;1.66&times; faster, but made FP16
-1.22&ndash;1.27&times; slower. On the NPU, changing the convolution interface also changed
-the generated operations and latency.</p>
+<p><b>Channels-last wins at 64&times;64: 142 versus 207&nbsp;&micro;s per operation,</b>
+or 31% less time. This changes how data is arranged, keeping the NPU, logical inputs,
+weights and requested precision fixed.</p>
 
 <details>
   <summary>Layout and preparation results</summary>
-  <p>NCHW groups values by channel; NHWC places a pixel's channels together. The NPU
-  comparison keeps logical inputs and weights fixed and changes the external layout.</p>
+  <p>Channels-first (NCHW) groups values by channel; channels-last (NHWC) puts a pixel's
+  channels together. The first panel measures time per operation; lower is faster.
+  The second counts data-reordering steps in a separate NPU profile.</p>
   <figure>
-    <a href="figures/convolution_layout.svg" aria-label="Open NPU layout figure"><picture><source media="(max-width: 520px)" srcset="figures/convolution_layout-mobile.svg" width="608" height="1088"><img src="figures/convolution_layout.svg" width="1120" height="576" alt="NPU convolution latency drops from 207 to 142 microseconds at 64 by 64, alongside 18 to zero transpose instances; 32 by 32 ranges overlap."></picture></a>
-    <figcaption><b>Figure 4.</b> QNN panel: three job medians and their range. HTP panel: transpose instances in the first-repeat diagnostic. These counts are separate from the latency measurements.</figcaption>
+    <a href="figures/convolution_layout.svg" aria-label="Open NPU layout figure"><picture><source media="(max-width: 520px)" srcset="figures/convolution_layout-mobile.svg" width="608" height="1088"><img src="figures/convolution_layout.svg" width="1120" height="576" alt="Channels-last NPU convolution takes 142 microseconds versus 207 for channels-first at 64 by 64, with 0 versus 18 transpose steps in the profile. The 32 by 32 timing ranges overlap."></picture></a>
+    <figcaption><b>Figure 4.</b> Time: three job medians and their range, measured through QNN. Reordering: transpose count from the first-repeat NPU profile, not a duration. External data reordering is excluded from timing.</figcaption>
   </figure>
-  <p>At 64&times;64, QNN latency falls from <b>207 to 142&nbsp;&micro;s</b>, with 18
-  transpose instances becoming zero. Other format operations remain, and the 32&times;32
-  ranges overlap. External reordering is excluded, so this benefit assumes the pipeline
-  can supply and consume the chosen layout.</p>
+  <p><b>Choosing the input/output layout can save work without changing the math.</b>
+  At 64&times;64, the profile's transpose count drops from 18 to zero; other format
+  operations remain. At 32&times;32, overlapping timing ranges leave no clear winner.
+  The benefit assumes the surrounding pipeline already uses the chosen layout.</p>
   <p>An audit also caught preparation options sent only at conversion in the original
   sweep. The corrected experiment sets them during device preparation: O1 produces
-  fewer nodes than O3, 24 versus 47, yet takes 91 versus 80&nbsp;&micro;s. Node count
-  alone does not predict runtime.</p>
+  fewer recorded operations than O3, 24 versus 47, yet takes 91 versus 80&nbsp;&micro;s.
+  O3 wins on time in this case; a smaller operation count does not guarantee faster execution.</p>
   <p><a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/gpu-layout/report.md">GPU layout measurements</a> &middot; <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/preparation-audit/report.md">Preparation audit</a> &middot; <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/npu-preparation/report.md">Corrected preparation results</a></p>
 </details>
 
@@ -303,7 +315,7 @@ accuracy requirement on a representative dataset and repeat whole measurement se
 <h2 id="reproduce">Data and reproduction</h2>
 <p>The figures use saved measurements; no new device runs were made for this article.
 The <a href="https://github.com/Nzouh/Nabil-Zouhari/blob/main/research/accelerator-bench/build_benchmark_figures.py">article figure script</a>
-rebuilds the three main charts. The <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/companion.ipynb">companion notebook</a>
+rebuilds all four charts. The <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/companion.ipynb">companion notebook</a>
 contains the layout example and full model checks.</p>
 <ul class="refs">
   <li><a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/snapdragon-comparison/report.md">GPU/NPU latency and raw jobs</a></li>
