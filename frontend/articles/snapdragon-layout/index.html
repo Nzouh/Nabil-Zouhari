@@ -142,7 +142,7 @@
 <article>
 <header>
   <h1>Benchmarking an RTX 3060<br>and a Snapdragon NPU</h1>
-  <p class="subtitle">Latency, compiler speedups, and GPU energy per operation</p>
+  <p class="subtitle">Time per operation, gains from compilation, and GPU energy use</p>
   <p class="byline">Nabil Zouhari &middot; October 2026</p>
   <p class="byline"><a href="https://github.com/Nzouh/accelerator-bench/tree/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6">Code and measurements</a> &middot; <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/docs/methodology.md">Measurement method</a></p>
 </header>
@@ -154,8 +154,8 @@ convolution + ReLU, and RMSNorm, then inspected how compilation changed the work
 <div class="abstract results">
   <span class="label">Measured results</span>
   <ul>
-    <li><b>Latency:</b> GPU graph replay was faster across all 12 matched shapes. Including Python dispatch changes some comparisons.</li>
-    <li><b>Compilation:</b> FP16 RMSNorm at 32&times;1024 ran <b>10.05&times; faster</b> in graph replay, with nine kernels becoming one.</li>
+    <li><b>Execution time:</b> GPU replay was fastest across all 12 matched shapes. The largest matrix multiplication took <b>177&nbsp;&micro;s on the GPU versus 742&nbsp;&micro;s on the NPU</b>.</li>
+    <li><b>Compilation:</b> FP16 RMSNorm at 32&times;1024 dropped from <b>13.18 to 1.31&nbsp;&micro;s per operation</b> on the GPU: a 10.05&times; speedup.</li>
     <li><b>GPU energy:</b> that workload used <b>89% less energy per operation</b> when compiled in this run, despite higher average power during sustained replay.</li>
   </ul>
 </div>
@@ -168,7 +168,7 @@ convolution + ReLU, and RMSNorm, then inspected how compilation changed the work
     <tr><th scope="row">Device</th><td>6 GiB GPU &middot; WSL2</td><td>Galaxy S24 &middot; Hexagon v75 NPU</td></tr>
     <tr><th scope="row">Software</th><td>PyTorch 2.11 &middot; CUDA 12.8</td><td>QNN &middot; QAIRT 2.50</td></tr>
     <tr><th scope="row">Precision</th><td>FP16 and FP32</td><td>FP16 requested; FP32 input/output</td></tr>
-    <tr><th scope="row">Timing</th><td>Graph replay and Python dispatch</td><td>QNN framework calls</td></tr>
+    <tr><th scope="row">Timing</th><td>Recorded replay and Python calls</td><td>Calls through Qualcomm's QNN runtime</td></tr>
   </tbody>
 </table>
 </div>
@@ -183,57 +183,72 @@ are outside these timings.</p>
 session; clocks unlocked, TF32 and cuDNN autotuning off. NPU: three jobs per setting,
 with cloud device assignment uncontrolled.</p>
 
-<h2 id="latency"><span class="no">1</span>GPU vs. NPU latency</h2>
+<h2 id="latency"><span class="no">1</span>GPU vs. NPU: time per operation</h2>
 
-<p>These curves use compiled FP16 on the GPU and requested FP16 on the NPU. Lower is
-better. The GPU graph path amortizes host launch overhead; the Python path includes
-dispatch and synchronization. QNN has its own framework-call boundary.</p>
+<p><b>The RTX 3060 with replay has the lowest measured time at all 12 tested shapes.</b>
+The vertical axis is microseconds (&micro;s) per completed operation: lower is faster.
+For matrix multiplication, each operation multiplies an M&times;1024 matrix by a
+1024&times;1024 matrix; the horizontal axis changes M, the number of input rows.</p>
+
+<p><b>GPU replay</b> repeats a recorded sequence of calls, reducing the CPU's work to
+launch them. <b>GPU via Python</b> includes Python issuing calls and waiting for completion.
+<b>NPU via QNN</b> times calls through Qualcomm's runtime. The GPU uses compiled FP16;
+the NPU requests FP16 with FP32 inputs and outputs.</p>
 
 <figure>
-  <a href="figures/benchmark_latency.svg" aria-label="Open device latency figure"><picture><source media="(max-width: 520px)" srcset="figures/benchmark_latency-mobile.svg" width="608" height="1408"><img src="figures/benchmark_latency.svg" width="1200" height="576" alt="Latency across four shapes each for matmul, convolution and RMSNorm. GPU graph replay is below NPU QNN for all twelve; GPU Python dispatch changes some rankings."></picture></a>
-  <figcaption><b>Figure 1.</b> All 12 matched shapes; latency axes are logarithmic. GPU whiskers span P10&ndash;P90 of block means. NPU points are medians of three job medians; whiskers show their range. Neither is a confidence interval. NPU convolutions use NCHW.</figcaption>
+  <a href="figures/benchmark_latency.svg" aria-label="Open time-per-operation figure"><picture><source media="(max-width: 520px)" srcset="figures/benchmark_latency-mobile.svg" width="608" height="1408"><img src="figures/benchmark_latency.svg" width="1200" height="576" alt="Time per operation in microseconds. GPU replay is fastest at all twelve sizes. At 1,024 input rows, matrix multiplication takes 177 microseconds with GPU replay, 216 through Python, and 742 on the NPU through QNN."></picture></a>
+  <figcaption><b>Figure 1.</b> Time per operation; lower is faster. Vertical ticks increase tenfold. GPU error bars cover the middle 80% of timing-block averages. NPU points summarize three job medians; bars show their range. Neither is a confidence interval. NPU convolutions use NCHW.</figcaption>
 </figure>
 
-<p>The RTX graph path is faster at every tested shape. But the 16&times;16 convolution
-takes <b>8.31&nbsp;&micro;s in GPU graph replay, 160.53&nbsp;&micro;s through Python, and
-79.0&nbsp;&micro;s through QNN</b>. The apparent ranking changes with the timing boundary.
-These numbers describe the measured hardware and software paths; they do not isolate
-the chips' capabilities.</p>
+<p><b>Matrix multiplication:</b> at 1,024 rows, the GPU takes <b>177&nbsp;&micro;s with
+replay or 216&nbsp;&micro;s through Python</b>, versus <b>742&nbsp;&micro;s on the NPU</b>.
+The GPU is clearly faster for this case in both execution modes. At one row, Python
+and QNN are close, 97 versus 101&nbsp;&micro;s, while GPU replay takes 10.3&nbsp;&micro;s.
+For small repeated matrix jobs, reducing the cost of launching work is worth testing.</p>
+
+<p><b>Convolution and RMSNorm:</b> GPU replay is also fastest at every size. Including
+Python can reverse a comparison: the 16&times;16 convolution takes 160.5&nbsp;&micro;s
+through Python versus 79.0&nbsp;&micro;s through QNN, but only 8.31&nbsp;&micro;s in GPU
+replay. The winner depends on the execution mode; these paths include different work.</p>
 
 <h2 id="compiler"><span class="no">2</span>Where compilation helps</h2>
 
-<p>Here the comparison stays on the RTX 3060. <em>Eager</em> executes the PyTorch
-operations directly; <em>compiled</em> uses <code>torch.compile</code> with Inductor.
-Each point divides eager graph time by compiled graph time: above 1&times; is faster.</p>
+<p>This graph asks whether compilation reduces <b>execution time for the same operation
+on the same GPU</b>. Both versions use recorded replay. The ratio is <b>time before
+compilation &divide; time after compilation</b>: 1&times; means no change, 2&times;
+means half the time, and below 1&times; means compilation made it slower.</p>
 
 <figure>
   <a href="figures/compiler_speedup.svg" aria-label="Open compiler speedup figure"><picture><source media="(max-width: 520px)" srcset="figures/compiler_speedup-mobile.svg" width="608" height="1408"><img src="figures/compiler_speedup.svg" width="1200" height="624" alt="Compiled versus eager GPU speedup for all twelve shapes in FP16 and FP32. Matmul stays near one. FP16 convolution improves about 1.3 times; FP32 convolution slows down. RMSNorm improves about 10 times in FP16 and 3.5 to 6.3 times in FP32."></picture></a>
-  <figcaption><b>Figure 2.</b> Ratios of median CUDA graph times. The dashed line is eager performance; points to its right are faster. All panels use the same logarithmic scale. Values below 1 expose regressions.</figcaption>
+  <figcaption><b>Figure 2.</b> Execution-time speedup from <code>torch.compile</code>. Higher is better. The dashed line marks no change; each tick doubles the ratio. FP16 and FP32 mean 16-bit and 32-bit floating-point calculations. This does not measure time spent compiling.</figcaption>
 </figure>
 
 <p>RMSNorm, which rescales rows by their root-mean-square magnitude, benefits most.
 At 32&times;1024 in FP16, latency falls from <b>13.18 to 1.31&nbsp;&micro;s</b>.
 A separate profiler run shows <b>nine kernels becoming one Triton reduction kernel</b>.
-Through Python dispatch, the speedup shrinks to 1.94&times;: launch overhead still matters.</p>
+With Python calls included, time drops from 153.25 to 78.95&nbsp;&micro;s, a smaller
+1.94&times; speedup.</p>
 
-<p>Matmul stays close to 1&times;. FP16 convolution improves by about 1.3&times;, while
-FP32 convolution gets slower. Compilation is useful here, but its benefit depends on
-the operation, shape and precision.</p>
+<p><b>RMSNorm is the clear compilation win.</b> Matrix multiplication stays near
+1&times;, so compilation offers no clear time saving for these cases.
+FP16 convolution takes about 21&ndash;25% less time; FP32 convolution takes more time.
+Compiling everything does not guarantee faster execution.</p>
 
 <h2 id="energy"><span class="no">3</span>GPU power and energy</h2>
 
-<p>For energy, I replayed each GPU graph for at least five seconds, integrated sampled
-NVML power, and divided by the completed operation count. This was a separate phase
-from the latency measurements.</p>
+<p>This measures <b>energy needed to complete one operation</b>, in millijoules (mJ):
+lower uses less energy for the same work. I ran each GPU implementation for at least
+five seconds, measured device energy from NVML power readings, and divided by the
+completed operation count. Energy was measured separately from execution time.</p>
 
 <figure>
   <a href="figures/gpu_energy.svg" aria-label="Open GPU energy figure"><picture><source media="(max-width: 520px)" srcset="figures/gpu_energy-mobile.svg" width="608" height="1408"><img src="figures/gpu_energy.svg" width="1200" height="576" alt="FP16 GPU energy per operation across all twelve shapes. Compiled RMSNorm uses much less energy than eager, convolution improves, and matmul has no consistent improvement. A hand-fused implementation is also shown for RMSNorm."></picture></a>
-  <figcaption><b>Figure 3.</b> FP16 gross GPU energy; lower is better. All panels share a logarithmic scale. Each point is one sustained measurement window, so no uncertainty band is shown. The hand-fused Triton kernel applies only to RMSNorm.</figcaption>
+  <figcaption><b>Figure 3.</b> GPU energy per operation, using FP16. Eager is before compilation; compiled is after. Hand-fused is a separate kernel combining the RMSNorm steps. Vertical ticks increase tenfold. Each point is one measurement window; uncertainty across runs is unmeasured.</figcaption>
 </figure>
 
-<p>RMSNorm's lower energy appears across all four tested sizes. Matmul does not show
-a consistent benefit. The 32&times;1024 RMSNorm case makes the difference between power
-and energy clear:</p>
+<p><b>Compiled RMSNorm and convolution use less GPU energy at every tested size.</b>
+Matrix multiplication has no consistent improvement. For 32&times;1024 RMSNorm,
+the separately written kernel uses the least energy in this run:</p>
 
 <div class="table-wrap">
 <table aria-label="FP16 RMSNorm 32 by 1024 power and energy">

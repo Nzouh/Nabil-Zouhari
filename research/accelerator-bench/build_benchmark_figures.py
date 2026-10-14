@@ -37,7 +37,7 @@ assert len(npu) == 12 and all(r['complete'] and r['n'] == 3 for r in npu)
 assert not remote['failures']
 
 TEAL, ORANGE, GRAY, PURPLE = '#087e8b', '#bd4b22', '#667085', '#7965a3'
-OPS = [('matmul', 'Matmul', 'Rows M'), ('conv_relu', 'Conv + ReLU', 'H = W'), ('rmsnorm', 'RMSNorm', 'Rows')]
+OPS = [('matmul', 'Matrix multiplication', 'Input rows'), ('conv_relu', 'Convolution + ReLU', 'Image width = height'), ('rmsnorm', 'RMSNorm', 'Input rows')]
 plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10,
     'axes.spines.top': False, 'axes.spines.right': False, 'axes.titleweight': 'bold',
     'axes.titlesize': 11, 'figure.facecolor': 'white', 'svg.hashsalt': 'accelerator-benchmark-article'})
@@ -79,19 +79,19 @@ for narrow in (False, True):
     for ax, (op, title, xlabel) in zip(axes, OPS):
         selected = sorted((r for r in npu if r['case']['op']==op), key=size)
         x = np.arange(4)
-        for metric, label, color, marker, offset in [('graph_cuda_ms','GPU graph',TEAL,'o',-.08), ('wall_ms','GPU Python',GRAY,'s',0)]:
+        for metric, label, color, marker, offset in [('graph_cuda_ms','GPU replay',TEAL,'o',-.08), ('wall_ms','GPU via Python',GRAY,'s',0)]:
             measurements = [local[r['case']['id']][metric] for r in selected]
             med = np.array([r['median'] * 1000 for r in measurements])
             error = [med - [r['p10']*1000 for r in measurements], np.array([r['p90']*1000 for r in measurements])-med]
             ax.errorbar(x+offset, med, yerr=error, color=color, marker=marker, ms=4, capsize=2, lw=1.2, label=label)
         med = np.array([r['median_us'] for r in selected])
         error = [med - [r['min_us'] for r in selected], np.array([r['max_us'] for r in selected])-med]
-        ax.errorbar(x+.08, med, yerr=error, color=ORANGE, marker='^', ms=4, capsize=2, lw=1.2, label='NPU QNN')
+        ax.errorbar(x+.08, med, yerr=error, color=ORANGE, marker='^', ms=4, capsize=2, lw=1.2, label='NPU via QNN')
         ax.set(title=title, xlabel=xlabel, yscale='log', ylim=(.7, 1400))
         ax.set_xticks(x, [str(size(r)) for r in selected])
         ax.set_yticks([1,10,100,1000], ['1','10','100','1,000'])
         ax.grid(axis='y', alpha=.18)
-        if narrow or ax is axes[0]: ax.set_ylabel('Latency (µs, log)')
+        if narrow or ax is axes[0]: ax.set_ylabel('Time per operation (µs)')
     finish(fig, axes, 'benchmark_latency', narrow)
 
     fig, axes = panels(narrow, height=3.9)
@@ -112,8 +112,8 @@ for narrow in (False, True):
         ax.tick_params(axis='x',labelsize=8)
         ax.set_yticks(range(4),[str(size(r)) for r in eager])
         ax.set_ylim(3.6,-.6)
-        ax.set(title=title,xlabel='Speedup (×, log)')
-        ax.set_ylabel('H = W' if op=='conv_relu' else 'Rows')
+        ax.set(title=title,xlabel='Before / after time (×)')
+        ax.set_ylabel('Image width = height' if op=='conv_relu' else 'Input rows')
         ax.grid(axis='x',alpha=.12)
     finish(fig, axes, 'compiler_speedup', narrow)
 
@@ -129,7 +129,7 @@ for narrow in (False, True):
         ax.set_yticks([.1,1,10],['0.1','1','10'])
         ax.set_xticks(range(4),[str(size(r)) for r in group(op)])
         ax.grid(axis='y',alpha=.18)
-        if narrow or ax is axes[0]: ax.set_ylabel('Energy (mJ/op, log)')
+        if narrow or ax is axes[0]: ax.set_ylabel('Energy per operation (mJ)')
     finish(fig, axes, 'gpu_energy', narrow)
 
 profile_path=repo/'results/rtx3060-ac-rmsnorm-profile.json'
