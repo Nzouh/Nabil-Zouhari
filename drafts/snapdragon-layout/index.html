@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="A small study of tensor layout, generated operations, and measured latency on a Snapdragon NPU.">
+<title>The Same Convolution, a Different Layout | Nabil Zouhari</title>
+<style id="article-style">
+
+  :root {
+    --text: #201d18;
+    --muted: #6d6a63;
+    --accent: #2c5f8a;
+    --rule: #e3ded4;
+    --box: #f4f1ea;
+    --bg: #fbf9f5;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.65 Georgia, 'Times New Roman', serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+  header {
+    text-align: left; margin-bottom: 3rem;
+    border-top: 1px solid var(--text); border-bottom: 1px solid var(--rule);
+    padding: 1.6rem 0 1.2rem;
+  }
+  h1 {
+    font-family: var(--sans); font-weight: 700;
+    font-size: 2.1rem; line-height: 1.2; margin: 0 0 0.6rem; letter-spacing: -0.01em;
+  }
+  .subtitle { font-style: italic; color: var(--muted); font-size: 1.05rem; margin: 0 0 1.2rem; }
+  .byline {
+    color: var(--muted); font-size: 0.85rem; font-family: var(--sans);
+    margin: 0.25rem 0; border-top: 1px solid var(--rule); padding-top: 0.55rem;
+  }
+  h2 {
+    font-family: var(--sans); font-weight: 650;
+    font-size: 1.22rem; margin: 3rem 0 0.8rem; letter-spacing: -0.005em;
+  }
+  h2 .no { color: var(--muted); font-weight: 400; margin-right: 0.55rem; }
+  p { margin: 0.9rem 0; }
+  em { font-style: italic; }
+  a { color: var(--accent); }
+  .abstract {
+    background: var(--box); border-left: 3px solid var(--accent);
+    padding: 1rem 1.3rem; margin: 0 0 1rem; font-size: 0.96rem;
+    border-radius: 0 4px 4px 0;
+  }
+  .abstract .label {
+    font-family: var(--sans); font-weight: 700;
+    font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); display: block; margin-bottom: 0.4rem;
+  }
+  figure { margin: 1.8rem 0; }
+  figure img {
+    max-width: 100%; height: auto; display: block; margin: 0 auto;
+    border: 1px solid var(--rule); border-radius: 4px; background: #fff;
+  }
+  figcaption {
+    margin-top: 0.65rem; font-size: 0.86rem; color: var(--muted);
+    font-family: var(--sans); line-height: 1.55;
+    max-width: 92%; margin-left: auto; margin-right: auto;
+  }
+  figcaption b { color: var(--text); }
+  table {
+    border-collapse: collapse; margin: 1.2rem auto; font-size: 0.9rem;
+    font-family: var(--sans);
+  }
+  th, td { border: 1px solid var(--rule); padding: 0.45rem 0.8rem; text-align: left; }
+  th { background: var(--box); }
+  .valbox {
+    background: var(--box); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 1.1rem 1.4rem; margin: 2rem 0; font-size: 0.94rem;
+  }
+  .valbox h3 { margin: 0 0 0.6rem; font-size: 1rem; font-family: var(--sans); font-weight: 650; }
+  .valbox ul { margin: 0.4rem 0 0.8rem 1.2rem; padding: 0; }
+  .valbox li { margin: 0.3rem 0; }
+  pre {
+    background: var(--box); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 0.9rem 1.1rem; overflow-x: auto; font-size: 0.85rem;
+  }
+  code { font-family: ui-monospace, Consolas, monospace; }
+  .refs { font-size: 0.92rem; }
+  .refs li { margin: 0.5rem 0; }
+  .limits li { margin: 0.25rem 0; }
+  .sitenav {
+    max-width: 720px; margin: 0 auto; padding: 1.3rem 1.25rem 0;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--sans); font-size: 0.88rem;
+  }
+  .sitenav a { text-decoration: none; }
+  .sitenav .brand { font-style: italic; font-family: Georgia, serif; color: var(--muted); font-size: 0.98rem; }
+  .sitenav .brand:hover { color: var(--text); }
+  .sitenav .links a { color: var(--muted); margin-left: 1.4rem; }
+  .sitenav .links a:hover { color: var(--accent); }
+
+</style>
+<style>
+  .draft { color: #805026; }
+  .equation { text-align: center; margin: 1.3rem 0; font-size: 0.96rem; }
+  .equation code { white-space: normal; overflow-wrap: anywhere; }
+  .table-wrap { overflow-x: auto; }
+  .table-wrap table { width: 100%; }
+  .input-image { display: flex; gap: 1.1rem; align-items: center; }
+  .input-image img { width: 150px; flex: 0 0 150px; }
+  .input-image figcaption { margin: 0; max-width: none; }
+  .refs { padding-left: 1.3rem; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--muted); font: 0.83rem/1.6 var(--sans); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  @media (max-width: 520px) {
+    main { padding-top: 2rem; }
+    h1 { font-size: 1.8rem; }
+    .abstract { padding: 0.9rem 1rem; }
+    .input-image { align-items: flex-start; gap: 0.8rem; }
+    .input-image img { width: 112px; flex-basis: 112px; }
+    th, td { padding: 0.4rem 0.5rem; }
+  }
+</style>
+</head>
+<body>
+<nav class="sitenav" aria-label="Site">
+  <a class="brand" href="https://zouhari.dev/">Nabil Zouhari</a>
+  <span class="links"><a href="https://zouhari.dev/">Home</a><a href="https://zouhari.dev/articles">Articles</a></span>
+</nav>
+<main>
+<article>
+<header>
+  <h1>The Same Convolution,<br>a Different Layout</h1>
+  <p class="subtitle">Following a tensor from memory order to Snapdragon NPU execution</p>
+  <p class="byline">Nabil Zouhari &middot; October 2026 &middot; <span class="draft">Unpublished draft</span></p>
+  <p class="byline"><a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/companion.ipynb">Companion notebook</a> &middot; <a href="https://github.com/Nzouh/accelerator-bench/tree/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6">Code and measurements</a></p>
+</header>
+
+<div class="abstract">
+  <span class="label">Abstract</span>
+  Changing a tensor's layout leaves its mathematical values unchanged, but can change
+  the work generated by a compiler. On a Snapdragon 8 Gen 3, a 64&times;64 convolution's
+  median QNN-call latency fell from 207 to 142&nbsp;&micro;s when its interface changed
+  from NCHW to NHWC. The execution trace also lost 18 transpose instances. That result
+  did not hold at every size, and a pretrained-model follow-up failed the numerical
+  acceptance rule. This study follows both results, from a small correctness check to
+  the limits of what the measurements support.
+</div>
+
+<h2><span class="no">1</span>From comparing chips to comparing layouts</h2>
+
+<p>I started by comparing my RTX 3060 laptop GPU with a Snapdragon NPU through
+Qualcomm AI Hub. I wanted to see where the NPU was useful, beyond a headline benchmark.</p>
+
+<p>The timing boundaries made a simple ranking hard to defend. The GPU measurements
+used resident FP16 tensors and CUDA graph replay; the NPU measurements used QNN calls
+with FP32 inputs and outputs, requesting FP16 computation. Those numbers include
+different work. I also had no NPU energy measurements.</p>
+
+<p>A narrower question seemed more useful: <em>on the same type of NPU, what changes
+when the same convolution receives its data in a different order?</em> That gives a
+compiler question with something concrete to inspect: the generated operations.</p>
+
+<h2><span class="no">2</span>What a layout changes</h2>
+
+<p>N, C, H and W stand for batch, channels, height and width. For one image with two
+channels, NCHW stores each channel together. NHWC puts the channels of each pixel next
+to one another. The values and their pixel positions stay the same.</p>
+
+<figure>
+  <a href="figures/storage_order.svg" aria-label="Open storage-order figure at full size"><picture><source media="(max-width: 520px)" srcset="figures/storage_order-mobile.svg" width="608" height="400"><img src="figures/storage_order.svg" width="1120" height="400" alt="NCHW stores values 0 through 5, followed by 10 through 15. NHWC interleaves them: 0, 10, 1, 11, and so on."></picture></a>
+  <figcaption><b>Figure 1.</b> Read left to right for memory order. Teal and orange identify the two channels of a 2&times;3 image.</figcaption>
+</figure>
+
+<p>A 1&times;1 convolution with weights [2, 1] is enough to check the distinction:</p>
+<p class="equation"><code>y[h, w] = 2 &times; x<sub>0</sub>[h, w] + x<sub>1</sub>[h, w]</code></p>
+<p>The first pixel gives 2 &times; 0 + 10 = 10 in either layout. An explicit-loop
+implementation gives the output [[10, 13, 16], [19, 22, 25]]; both PyTorch layout paths
+match it exactly. A plain <code>reshape</code> gives the wrong result, because it assigns
+the existing values to different axes.</p>
+
+<p>The distinction matters for cost too. In this example, <code>permute</code> creates a
+view sharing the original storage; packing that view with <code>contiguous()</code>
+copies values. A compiler may fuse or eliminate that conversion. Counting permutations
+in the source therefore does not tell us how many copies execute.</p>
+
+<p>One PyTorch detail: <code>channels_last</code> keeps the logical NCHW shape and changes
+strides. An NHWC interface changes the axis order as well. They are related, but they
+are not interchangeable API choices.</p>
+
+<h2><span class="no">3</span>The convolution on the NPU</h2>
+
+<p>The device experiment holds the logical input and weights fixed and changes the
+external layout. Each run checks numerical agreement and NPU placement.</p>
+
+<div class="table-wrap">
+<table aria-label="Convolution experiment setup">
+  <tbody>
+    <tr><th scope="row">Device</th><td>Galaxy S24 &middot; Snapdragon 8 Gen 3 &middot; Hexagon v75</td></tr>
+    <tr><th scope="row">Runtime</th><td>QNN DLC &middot; QAIRT 2.50 &middot; Android 14</td></tr>
+    <tr><th scope="row">Precision</th><td>FP16 requested; FP32 input and output</td></tr>
+    <tr><th scope="row">Operation</th><td>Batch 1 &middot; 32 input / 64 output channels &middot; 3&times;3 + ReLU</td></tr>
+    <tr><th scope="row">Sampling</th><td>Three separate AI Hub jobs per layout and size</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>QNN is the Qualcomm runtime whose call is timed. The HTP profile records generated
+operations on the Hexagon NPU. These are different views of the same experiment:
+one measures latency, the other helps explain what ran.</p>
+
+<figure>
+  <a href="figures/convolution_layout.svg" aria-label="Open convolution figure at full size"><picture><source media="(max-width: 520px)" srcset="figures/convolution_layout-mobile.svg" width="608" height="1088"><img src="figures/convolution_layout.svg" width="1120" height="576" alt="At sizes 16, 32, 64 and 128, NCHW median latencies are 79, 103.5, 207 and 501 microseconds; NHWC medians are 70, 109, 142 and 378. Transpose instances change from 4, 4, 18 and 18 to zero at all four sizes."></picture></a>
+  <figcaption><b>Figure 2.</b> QNN panel: each dot is one job's median latency; the central mark is their median and whiskers span their range, not a confidence interval. HTP panel: transpose instances in the first-repeat diagnostic. Both panels vary image width and height.</figcaption>
+</figure>
+
+<p>At 64&times;64, latency falls from <b>207 to 142&nbsp;&micro;s, a 31.4% reduction</b>.
+The corresponding trace goes from 18 transpose instances to zero. At 128&times;128,
+latency falls by 24.6%. But at 32&times;32 the NHWC median is slightly higher and the
+job ranges overlap. Removing transposes did not guarantee a win.</p>
+
+<p>The trace supports a change in layout handling; it does not assign the entire
+65&nbsp;&micro;s difference to transposes. Other operations change too. At 64&times;64,
+<code>ForceFormat_Crouton</code> instances increase from four to eight, so format work
+remains. The instrumented HTP trace also has a different timing method from the QNN
+measurement; subtracting its operation times would not isolate the saving.</p>
+
+<p>Input and output reordering are outside this measurement. The benefit therefore
+assumes the surrounding pipeline can supply and consume the chosen layout. These
+were separate cloud sweeps, with uncontrolled device assignment and clocks. They
+support a result for this configuration, not a phone-wide speedup.</p>
+
+<h2><span class="no">4</span>Checking where a compiler option takes effect</h2>
+
+<p>The first sweep exposed a problem in the experiment itself. It supplied HTP options
+during DLC conversion, without verifying that they took effect during preparation on
+the device. That prevented a claim about O1 versus O3. The layout comparison above
+uses matched requested settings, but does not establish which preparation options
+were applied.</p>
+
+<p>I corrected the runner to pass those options explicitly on inference jobs, then
+checked the runtime logs and generated graph. The following experiment fixes the
+convolution at 16&times;16 and changes only the preparation request.</p>
+
+<figure>
+  <a href="figures/preparation.svg" aria-label="Open preparation figure at full size"><picture><source media="(max-width: 520px)" srcset="figures/preparation-mobile.svg" width="608" height="1088"><img src="figures/preparation.svg" width="1120" height="576" alt="O3 takes 80 microseconds with 47 HTP nodes. O1 takes 91 microseconds with 24 nodes. O3 with ReLU folding disabled takes 79.5 microseconds with 47 nodes."></picture></a>
+  <figcaption><b>Figure 3.</b> Latency bars show the median and range of three job medians. Node counts come from the first-repeat HTP diagnostic. “No fold” requests disabled convolution/ReLU folding.</figcaption>
+</figure>
+
+<p>O1 produces <b>24 nodes instead of 47, yet takes 91 rather than 80&nbsp;&micro;s</b>.
+A node count gives equal weight to operations that can have very different costs.
+It cannot substitute for a timing measurement. The folding-disabled request has a
+range overlapping O3 and does not establish a folding benefit.</p>
+
+<p>This reminded me of the independent solver check in my
+<a href="https://zouhari.dev/articles/weather-on-a-sphere">weather study</a>:
+before interpreting a setting, verify what the implementation actually did.</p>
+
+<h2><span class="no">5</span>Does it survive a complete model?</h2>
+
+<p>A single convolution leaves the more interesting question open. I followed it with
+pretrained MobileNetV2, using torchvision's IMAGENET1K_V2 weights and one 224&times;224
+image. The experiment plan and acceptance rule were committed before the model jobs.</p>
+
+<figure class="input-image">
+  <img src="figures/input-crop.png" width="224" height="224" alt="The cropped NASA photograph of astronaut Eileen Collins used as the model input.">
+  <figcaption>The actual input crop. NASA photograph of Eileen Collins, distributed by <a href="https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut">scikit-image</a>. One reproducible input, not an accuracy dataset.</figcaption>
+</figure>
+
+<p>There are two comparisons. The first supplies already-normalized tensors in NCHW
+or NHWC. The second supplies identical cropped RGB pixels and places normalization
+inside the graph: one variant permutes then normalizes, the other normalizes then
+permutes. Compare within each pair; they include different work. Image decoding,
+resize/crop, host casting and transfers remain outside timing.</p>
+
+<p>Before comparing speed, every output score, or <em>logit</em>, must agree with the
+CPU FP64 reference under the fixed rule:</p>
+<p class="equation"><code>|output &minus; reference| &le; 0.01 + 0.01 &times; |reference|</code></p>
+
+<figure>
+  <a href="figures/vision_validation.svg" aria-label="Open model-validation figure at full size"><picture><source media="(max-width: 520px)" srcset="figures/vision_validation-mobile.svg" width="608" height="1088"><img src="figures/vision_validation.svg" width="1120" height="576" alt="All four model cases exceed the error allowance. NPU cases have 23, 20, 51 and 51 logits out of tolerance among 1,000. Separate CPU FP16 cases have 10, 13, 13 and 13 logits out of tolerance."></picture></a>
+  <figcaption><b>Figure 4.</b> Error panel: largest error divided by its allowance; anything above 1 fails. Count panel: failing logits out of 1,000. Orange is the NPU; gray is a separate CPU FP16 diagnostic. The dotted divider separates the two comparisons.</figcaption>
+</figure>
+
+<p><b>All 12 jobs failed the rule.</b> They reported NPU execution and preserved the
+reference's top prediction, but 20&ndash;51 logits per output exceeded the allowance.
+The three repeats of each case returned identical error statistics, so the plotted
+NPU ranges collapse to points.</p>
+
+<p>After that rejection, I added a CPU FP16 calculation to investigate the precision
+question. It fails the same tolerance too. That shows this rule can reject ordinary
+reduced-precision execution of the network; it does not identify a Qualcomm-specific
+defect. CPU FP16 is also not an emulator of NPU arithmetic.</p>
+
+<p>Keeping the top prediction is encouraging, but it does not satisfy a check on all
+1,000 scores or establish classification accuracy. I kept the original rule and left
+these timings out of the performance claim. <b>The whole-model speedup question
+remains open under this numerical requirement.</b></p>
+
+<h2><span class="no">6</span>What I would test next</h2>
+
+<p>The clearest result is the connection between interface layout, generated format
+operations and measured convolution latency. The 32&times;32 case is worth following:
+it loses its transposes without showing a clear speedup. Kernel choices and remaining
+format work are candidates to inspect, rather than assuming transpose count explains
+everything.</p>
+
+<p>For MobileNetV2, I would first choose a classification-accuracy requirement on a
+representative dataset and inspect how FP16 error accumulates through the layers.
+That requirement needs to be set before the next run. Then I would alternate the
+layout variants on one controlled device and include preprocessing and transfers.
+Those experiments could establish whether the local convolution result matters to
+an application.</p>
+
+<h2><span class="no">7</span>Reproduce and inspect</h2>
+
+<p>The <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/companion.ipynb">companion notebook</a>
+runs the small correctness example and rebuilds the figures from saved measurements.
+From the <a href="https://github.com/Nzouh/accelerator-bench/tree/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6">repository</a> root:</p>
+<pre><code>pip install -e '.[notebook]'
+python scripts/build_layout_notebook.py --with-vision</code></pre>
+<p>This uses the CPU and recorded device results; it submits no cloud jobs. The
+<a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/README.md">study README</a>
+records the environment and commands for fresh measurements.</p>
+
+<ul class="refs">
+  <li><a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/snapdragon-comparison/report.md">Layout results</a> and <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/reports/preparation-audit/report.md">preparation audit</a>.</li>
+  <li><a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/research/layout-study/PLAN.md">Model experiment plan</a> and <a href="https://github.com/Nzouh/accelerator-bench/blob/d009a12d0483f83d6b1a46c51d5c1bc80335b5c6/results/hub-s24-vision-layout-2026-10-14/precision-review.json">retained precision checks</a>.</li>
+  <li><a href="https://docs.pytorch.org/tutorials/intermediate/memory_format_tutorial.html">PyTorch memory formats</a>; <a href="https://workbench.aihub.qualcomm.com/docs/hub/api.html">AI Hub options</a>; <a href="https://docs.pytorch.org/vision/0.26/models/generated/torchvision.models.mobilenet_v2.html">MobileNetV2 weights and transforms</a>.</li>
+</ul>
+
+<footer>Measurements: October 13&ndash;14, 2026. Source snapshot: accelerator-bench <code>d009a12</code>. Draft saved outside the website's deployment directory.</footer>
+</article>
+</main>
+</body>
+</html>
